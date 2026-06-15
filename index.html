@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>UMKM Keliling — Kalkulator HPP & Keuangan</title>
+
+<style>
+/* ============================================================
+   ROOT TOKENS — Dark/Light Mode
+   ============================================================ */
+:root {
+  --bg:        #0F1117;
+  --surface:   #1A1D2E;
+  --surface2:  #242840;
+  --border:    #2E3354;
+  --accent:    #F5A623;
+  --accent2:   #F7C259;
+  --profit:    #4CAF82;
+  --loss:      #E55353;
+  --info:      #5B9CF6;
+  --txt:       #E8EAF0;
+  --txt2:      #9AA0BE;
+  --shadow:    rgba(0,0,0,0.5);
+  --radius:    14px;
+  --radius-sm: 8px;
+  --trans:     0.2s ease;
+}
+[data-theme="light"] {
+  --bg:        #F0F2F8;
+  --surface:   #FFFFFF;
+  --surface2:  #F5F6FA;
+  --border:    #DDE0EE;
+  --txt:       #1A1D2E;
+  --txt2:      #6B7099;
+  --shadow:    rgba(0,0,0,0.12);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  transition: background var(--trans), color var(--trans);
+}
+button { cursor: pointer; border: none; background: none; font-family: inherit; color: inherit; }
+input, select, textarea {
+  font-family: inherit;
+  color: var(--txt);
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+  transition: border-color var(--trans);
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+label { font-size: 0.78rem; color: var(--txt2); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; display: block; margin-bottom: 5px; }
+h1,h2,h3,h4 { line-height: 1.2; }
+a { color: var(--accent); text-decoration: none; }
+
+/* ============================================================
+   LAYOUT SHELL
+   ============================================================ */
+#app { display: flex; flex-direction: column; min-height: 100dvh; }
+
+/* ---- TOPBAR ---- */
+#topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(10px);
+}
+#topbar .logo { display: flex; align-items: center; gap: 8px; }
+#topbar .logo-icon { font-size: 1.5rem; }
+#topbar .logo-text { font-size: 0.95rem; font-weight: 800; line-height: 1.1; }
+#topbar .logo-text span { display: block; font-size: 0.65rem; font-weight: 500; color: var(--txt2); }
+#topbar .top-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; transition: background var(--trans), transform 0.1s;
+}
+.icon-btn:active { transform: scale(0.92); }
+
+/* ---- STATUS BAR ---- */
+#status-bar {
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none;
+}
+#status-bar::-webkit-scrollbar { display: none; }
+.stat-chip {
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  display: flex; align-items: center; gap: 5px;
+}
+.stat-chip .chip-label { color: var(--txt2); }
+.stat-chip .chip-val { font-weight: 700; color: var(--accent); }
+.stat-chip.profit .chip-val { color: var(--profit); }
+.stat-chip.loss-chip .chip-val { color: var(--loss); }
+
+/* ---- MAIN CONTENT ---- */
+#main { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+
+/* ---- BOTTOM NAV ---- */
+#bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; padding: 8px 4px;
+  font-size: 0.6rem; font-weight: 600; color: var(--txt2);
+  text-transform: uppercase; letter-spacing: 0.03em;
+  transition: color var(--trans);
+  border-top: 2px solid transparent;
+}
+.nav-btn .nav-icon { font-size: 1.3rem; }
+.nav-btn.active { color: var(--accent); border-top-color: var(--accent); }
+
+/* ============================================================
+   PAGES (Tab content)
+   ============================================================ */
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 0.8rem; font-weight: 700; color: var(--txt2);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+}
+.card-title::before { content: ''; display: block; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; }
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+.form-group { margin-bottom: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 12px 20px; border-radius: var(--radius-sm);
+  font-size: 0.95rem; font-weight: 700;
+  transition: filter var(--trans), transform 0.1s;
+  width: 100%;
+}
+.btn:active { transform: scale(0.97); filter: brightness(0.9); }
+.btn-primary { background: var(--accent); color: #111; }
+.btn-profit { background: var(--profit); color: #fff; }
+.btn-loss { background: var(--loss); color: #fff; }
+.btn-info { background: var(--info); color: #fff; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--txt); }
+.btn-sm { padding: 8px 14px; font-size: 0.82rem; }
+.btn-xs { padding: 6px 10px; font-size: 0.75rem; border-radius: 6px; width: auto; }
+
+/* ============================================================
+   PAGE 1 — JUAL (Quick Sale)
+   ============================================================ */
+.shift-banner {
+  background: linear-gradient(135deg, #1F2B44, #1A3A2A);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px;
+}
+.shift-banner.closed { background: linear-gradient(135deg, #2B1F1F, #2E1515); }
+.shift-info h3 { font-size: 1rem; font-weight: 800; color: var(--accent); }
+.shift-info p { font-size: 0.75rem; color: var(--txt2); margin-top: 2px; }
+.shift-timer { text-align: right; }
+.shift-timer .timer-val { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--profit); }
+.shift-timer .timer-label { font-size: 0.65rem; color: var(--txt2); }
+
+/* Coin-style quick buttons */
+.quick-sale-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-bottom: 14px;
+}
+.coin-btn {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.9rem;
+  background: radial-gradient(circle at 30% 30%, var(--surface2), var(--surface));
+  border: 2px solid var(--border);
+  box-shadow: 0 4px 12px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative; overflow: hidden;
+  color: var(--accent2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.coin-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 6px var(--shadow);
+}
+.coin-btn .coin-sub { font-size: 0.6rem; color: var(--txt2); font-weight: 500; margin-top: 2px; }
+/* Ripple effect */
+.coin-btn::after {
+  content: ''; position: absolute; border-radius: 50%;
+  background: rgba(245,166,35,0.3);
+  width: 0; height: 0; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s;
+  opacity: 0;
+}
+.coin-btn.rippling::after { width: 200%; height: 200%; opacity: 1; }
+
+/* Product buttons */
+.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.product-btn {
+  padding: 14px 10px; border-radius: var(--radius);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  text-align: left; font-weight: 700; font-size: 0.85rem;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: border-color var(--trans), transform 0.1s;
+}
+.product-btn:active { transform: scale(0.97); border-color: var(--accent); }
+.product-btn .p-price { color: var(--accent); font-size: 1rem; }
+.product-btn .p-hpp { color: var(--txt2); font-size: 0.7rem; }
+.product-btn .p-margin { color: var(--profit); font-size: 0.7rem; font-weight: 700; }
+
+/* Expense quick input */
+.expense-row { display: flex; gap: 8px; }
+.expense-row input { flex: 1; }
+
+/* ============================================================
+   PAGE 2 — BAHAN BAKU & HPP
+   ============================================================ */
+.bahan-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.bahan-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.bahan-info { flex: 1; }
+.bahan-info .b-name { font-weight: 700; font-size: 0.9rem; }
+.bahan-info .b-detail { font-size: 0.72rem; color: var(--txt2); margin-top: 2px; }
+.bahan-stok { text-align: right; font-size: 0.85rem; font-weight: 700; }
+.bahan-stok .stok-low { color: var(--loss); }
+.bahan-actions { display: flex; gap: 6px; }
+
+/* HPP Summary */
+.hpp-summary {
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.hpp-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.hpp-row:last-child { border-bottom: none; }
+.hpp-row .hpp-label { font-size: 0.82rem; color: var(--txt2); }
+.hpp-row .hpp-val { font-size: 0.9rem; font-weight: 700; }
+.hpp-row.highlight .hpp-val { color: var(--accent); font-size: 1.1rem; }
+.hpp-row.profit-row .hpp-val { color: var(--profit); }
+
+/* ============================================================
+   PAGE 3 — CLOSING ANALYSIS
+   ============================================================ */
+.closing-section { margin-bottom: 14px; }
+.analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.analysis-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-align: center;
+}
+.analysis-card .a-label { font-size: 0.7rem; color: var(--txt2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.analysis-card .a-val { font-size: 1.1rem; font-weight: 800; margin-top: 4px; }
+.analysis-card.profit-card { border-color: var(--profit); }
+.analysis-card.profit-card .a-val { color: var(--profit); }
+.analysis-card.loss-card { border-color: var(--loss); }
+.analysis-card.loss-card .a-val { color: var(--loss); }
+.analysis-card.accent-card { border-color: var(--accent); }
+.analysis-card.accent-card .a-val { color: var(--accent); }
+
+.rekonsiliasi-box {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  margin-top: 10px;
+}
+.rekon-result { font-size: 1.5rem; font-weight: 900; margin-top: 8px; }
+.rekon-match { color: var(--profit); }
+.rekon-plus  { color: var(--info); }
+.rekon-minus { color: var(--loss); }
+
+/* ============================================================
+   PAGE 4 — RIWAYAT & LAPORAN
+   ============================================================ */
+.trx-item {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border-left: 3px solid var(--border);
+  margin-bottom: 6px;
+}
+.trx-item.sale { border-left-color: var(--profit); }
+.trx-item.expense { border-left-color: var(--loss); }
+.trx-info .trx-name { font-size: 0.88rem; font-weight: 700; }
+.trx-info .trx-time { font-size: 0.7rem; color: var(--txt2); margin-top: 2px; }
+.trx-amount { font-size: 0.95rem; font-weight: 800; text-align: right; }
+.trx-amount.sale-amt { color: var(--profit); }
+.trx-amount.exp-amt  { color: var(--loss); }
+
+/* Bar chart */
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding: 10px 0; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.bar-col { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.5s ease; }
+.bar-label { font-size: 0.6rem; color: var(--txt2); text-align: center; }
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px 16px 32px;
+  width: 100%; max-width: 480px;
+  max-height: 90dvh; overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.modal-header h3 { font-size: 1.1rem; font-weight: 800; }
+.modal-close { font-size: 1.4rem; color: var(--txt2); padding: 4px; }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--txt); padding: 10px 20px; border-radius: 100px;
+  font-size: 0.85rem; font-weight: 600;
+  opacity: 0; transition: opacity 0.25s, transform 0.25s;
+  z-index: 300; white-space: nowrap;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+.text-accent { color: var(--accent); }
+.text-profit { color: var(--profit); }
+.text-loss   { color: var(--loss); }
+.text-muted  { color: var(--txt2); }
+.fw-bold { font-weight: 700; }
+.mb-8  { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.flex-row { display: flex; gap: 8px; }
+.flex-row .btn { flex: 1; }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  font-size: 0.68rem; font-weight: 700;
+}
+.badge-accent { background: rgba(245,166,35,0.15); color: var(--accent); }
+.badge-profit { background: rgba(76,175,130,0.15); color: var(--profit); }
+.badge-loss   { background: rgba(229,83,83,0.15); color: var(--loss); }
+.empty-state {
+  text-align: center; padding: 32px 16px; color: var(--txt2);
+}
+.empty-state .e-icon { font-size: 2.5rem; margin-bottom: 8px; }
+.empty-state p { font-size: 0.85rem; }
+
+/* ---- Session start screen ---- */
+#session-start {
+  display: none; position: fixed; inset: 0; z-index: 150;
+  background: var(--bg); flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px;
+}
+#session-start.show { display: flex; }
+#session-start .ss-icon { font-size: 4rem; margin-bottom: 16px; }
+#session-start h2 { font-size: 1.4rem; font-weight: 900; margin-bottom: 6px; text-align: center; }
+#session-start p { color: var(--txt2); font-size: 0.88rem; margin-bottom: 24px; text-align: center; }
+#session-start .ss-datetime {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 14px 20px; text-align: center; margin-bottom: 20px; width: 100%;
+  border: 1px solid var(--border);
+}
+#session-start .ss-datetime .ss-time { font-size: 2rem; font-weight: 900; color: var(--accent); }
+#session-start .ss-datetime .ss-date { font-size: 0.82rem; color: var(--txt2); margin-top: 4px; }
+
+/* ============================================================
+   RESPONSIVE TWEAKS
+   ============================================================ */
+@media (min-width: 480px) {
+  #app { max-width: 480px; margin: 0 auto; }
+  #bottom-nav { max-width: 480px; margin: 0 auto; left: 50%; transform: translateX(-50%); }
+  #toast { max-width: 360px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SESSION START OVERLAY — ditampilkan jika belum ada sesi hari ini
+     ============================================================ -->
+<div id="session-start">
+  <div class="ss-icon">🛒</div>
+  <h2>Selamat Pagi, Pejuang UMKM!</h2>
+  <p>Yuk mulai hari ini dengan mencatat modal awal dan waktu berangkat keliling.</p>
+  <div class="ss-datetime">
+    <div class="ss-time" id="ss-clock">00:00:00</div>
+    <div class="ss-date" id="ss-date">–</div>
+  </div>
+  <div style="width:100%;">
+    <div class="form-group">
+      <label>💰 Modal Cash Awal (Uang Kembalian)</label>
+      <input type="number" id="ss-modal" placeholder="Contoh: 50000" inputmode="numeric">
+    </div>
+    <button class="btn btn-primary" onclick="startSession()">🚀 Mulai Keliling Sekarang!</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP SHELL
+     ============================================================ -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="logo">
+      <span class="logo-icon">🛒</span>
+      <div class="logo-text">
+        UMKM Keliling
+        <span id="topbar-date">–</span>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="toggleTheme()" title="Ganti Mode">🌓</button>
+      <button class="icon-btn" onclick="openModal('modal-export')" title="Ekspor Data">📤</button>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="status-bar">
+    <div class="stat-chip">
+      <span class="chip-label">Omset</span>
+      <span class="chip-val" id="chip-omset">Rp0</span>
+    </div>
+    <div class="stat-chip profit">
+      <span class="chip-label">Laba</span>
+      <span class="chip-val" id="chip-laba">Rp0</span>
+    </div>
+    <div class="stat-chip loss-chip">
+      <span class="chip-label">Keluar</span>
+      <span class="chip-val" id="chip-keluar">Rp0</span>
+    </div>
+    <div class="stat-chip">
+      <span class="chip-label">Transaksi</span>
+      <span class="chip-val" id="chip-trx">0</span>
+    </div>
+    <div class="stat-chip">
+      <span class="chip-label">Durasi</span>
+      <span class="chip-val" id="chip-durasi">00:00</span>
+    </div>
+  </div>
+
+  <!-- MAIN PAGES -->
+  <div id="main">
+
+    <!-- ══════════════════════════════════════════════
+         PAGE 1: JUAL — Input Penjualan Cepat
+         ══════════════════════════════════════════════ -->
+    <div class="page active" id="page-jual">
+
+      <!-- Shift Banner -->
+      <div class="shift-banner" id="shift-banner">
+        <div class="shift-info">
+          <h3>🟢 Sedang Keliling</h3>
+          <p id="shift-start-label">Mulai: –</p>
+        </div>
+        <div class="shift-timer">
+          <div class="timer-val" id="timer-display">00:00:00</div>
+          <div class="timer-label">Durasi</div>
+        </div>
+      </div>
+
+      <!-- Quick Cash Buttons -->
+      <div class="card">
+        <div class="card-title">⚡ Catat Penjualan Cepat (Uang Receh)</div>
+        <div class="quick-sale-grid">
+          <button class="coin-btn" onclick="quickSale(1000)">
+            <span>Rp1K</span>
+            <span class="coin-sub">koin</span>
+          </button>
+          <button class="coin-btn" onclick="quickSale(2000)">
+            <span>Rp2K</span>
+            <span class="coin-sub">koin</span>
+          </button>
+          <button class="coin-btn" onclick="quickSale(5000)">
+            <span>Rp5K</span>
+            <span class="coin-sub">lembar</span>
+          </button>
+          <button class="coin-btn" onclick="quickSale(10000)">
+            <span>Rp10K</span>
+            <span class="coin-sub">lembar</span>
+          </button>
+          <button class="coin-btn" onclick="quickSale(20000)">
+            <span>Rp20K</span>
+            <span class="coin-sub">lembar</span>
+          </button>
+          <button class="coin-btn" onclick="openModal('modal-custom-sale')">
+            <span>✏️</span>
+            <span class="coin-sub">custom</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Product Buttons (dinamis dari daftar produk) -->
+      <div class="card">
+        <div class="card-title">🍱 Jual Per Produk (HPP Terlacak)</div>
+        <div class="product-grid" id="product-buttons">
+          <div class="empty-state" style="grid-column:1/-1;padding:16px;">
+            <div class="e-icon">🏷️</div>
+            <p>Tambah produk di tab <strong>HPP</strong> dulu ya!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pengeluaran Darurat -->
+      <div class="card">
+        <div class="card-title">💸 Pengeluaran di Jalan</div>
+        <div class="form-group">
+          <label>Keterangan</label>
+          <input type="text" id="exp-ket" placeholder="Bensin, parkir, dll…">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nominal (Rp)</label>
+            <input type="number" id="exp-nominal" placeholder="0" inputmode="numeric">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end;">
+            <button class="btn btn-loss" onclick="tambahPengeluaran()">+ Catat</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tombol Pulang -->
+      <button class="btn btn-primary" style="font-size:1.05rem;padding:16px;" onclick="openClosing()">
+        🏠 Pulang Keliling — Tutup Hari Ini
+      </button>
+
+    </div><!-- /page-jual -->
+
+    <!-- ══════════════════════════════════════════════
+         PAGE 2: HPP — Manajemen Bahan Baku & Produk
+         ══════════════════════════════════════════════ -->
+    <div class="page" id="page-hpp">
+
+      <!-- Input Bahan Baku -->
+      <div class="card">
+        <div class="card-title">🥬 Tambah Bahan Baku</div>
+        <div class="form-group">
+          <label>Nama Bahan</label>
+          <input type="text" id="bb-nama" placeholder="Ayam, tahu, mie, dll">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Harga Beli (Rp)</label>
+            <input type="number" id="bb-harga" placeholder="0" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label>Jumlah / Stok</label>
+            <input type="number" id="bb-jumlah" placeholder="1" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Satuan</label>
+          <input type="text" id="bb-satuan" placeholder="kg, liter, pcs, bungkus">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="tambahBahan()">+ Tambah Bahan Baku</button>
+      </div>
+
+      <!-- Daftar Bahan Baku -->
+      <div class="card">
+        <div class="card-title">📋 Daftar Bahan Baku</div>
+        <div class="bahan-list" id="bahan-list">
+          <div class="empty-state">
+            <div class="e-icon">🛒</div>
+            <p>Belum ada bahan baku. Tambah dulu di atas!</p>
+          </div>
+        </div>
+        <div id="bahan-total" style="display:none;" class="hpp-summary">
+          <div class="hpp-row highlight">
+            <span class="hpp-label">💰 Total Biaya Bahan Baku</span>
+            <span class="hpp-val" id="total-bahan">Rp 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kalkulator HPP & Produk -->
+      <div class="card">
+        <div class="card-title">🧮 Tambah Produk & Hitung HPP</div>
+        <div class="form-group">
+          <label>Nama Produk</label>
+          <input type="text" id="prod-nama" placeholder="Nasi Ayam, Es Teh, dll">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Porsi / Hari</label>
+            <input type="number" id="prod-porsi" placeholder="50" inputmode="numeric" oninput="hitungHPP()">
+          </div>
+          <div class="form-group">
+            <label>Harga Jual (Rp)</label>
+            <input type="number" id="prod-harga-jual" placeholder="0" inputmode="numeric" oninput="hitungHPP()">
+          </div>
+        </div>
+        <!-- HPP Preview -->
+        <div class="hpp-summary" id="hpp-preview" style="display:none;">
+          <div class="hpp-row">
+            <span class="hpp-label">Total Biaya Bahan</span>
+            <span class="hpp-val" id="prev-total-bahan">–</span>
+          </div>
+          <div class="hpp-row">
+            <span class="hpp-label">Target Porsi</span>
+            <span class="hpp-val" id="prev-porsi">–</span>
+          </div>
+          <div class="hpp-row highlight">
+            <span class="hpp-label">HPP Per Porsi</span>
+            <span class="hpp-val" id="prev-hpp">–</span>
+          </div>
+          <div class="hpp-row">
+            <span class="hpp-label">Harga Jual</span>
+            <span class="hpp-val" id="prev-jual">–</span>
+          </div>
+          <div class="hpp-row profit-row">
+            <span class="hpp-label">Margin / Porsi</span>
+            <span class="hpp-val" id="prev-margin">–</span>
+          </div>
+          <div class="hpp-row profit-row">
+            <span class="hpp-label">Margin %</span>
+            <span class="hpp-val" id="prev-margin-pct">–</span>
+          </div>
+        </div>
+        <button class="btn btn-profit btn-sm" onclick="tambahProduk()">✅ Simpan Produk</button>
+      </div>
+
+      <!-- Daftar Produk -->
+      <div class="card">
+        <div class="card-title">🏷️ Daftar Produk & HPP</div>
+        <div id="produk-list">
+          <div class="empty-state">
+            <div class="e-icon">🏷️</div>
+            <p>Belum ada produk tersimpan.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-hpp -->
+
+    <!-- ══════════════════════════════════════════════
+         PAGE 3: CLOSING — Analisis Pulang Keliling
+         ══════════════════════════════════════════════ -->
+    <div class="page" id="page-closing">
+      <div id="closing-content">
+        <div class="empty-state" style="padding:60px 16px;">
+          <div class="e-icon">📊</div>
+          <p>Tutup shift dari tab <strong>Jual</strong> untuk melihat analisis keuangan hari ini.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         PAGE 4: RIWAYAT — Transaksi & Laporan
+         ══════════════════════════════════════════════ -->
+    <div class="page" id="page-riwayat">
+
+      <!-- Grafik 7 Hari -->
+      <div class="card">
+        <div class="card-title">📈 Grafik Omset 7 Hari Terakhir</div>
+        <div class="bar-chart" id="bar-chart"></div>
+      </div>
+
+      <!-- Filter Tanggal -->
+      <div class="card">
+        <div class="card-title">🔍 Filter Riwayat Transaksi</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dari Tanggal</label>
+            <input type="date" id="filter-dari">
+          </div>
+          <div class="form-group">
+            <label>Sampai Tanggal</label>
+            <input type="date" id="filter-sampai">
+          </div>
+        </div>
+        <div class="flex-row">
+          <button class="btn btn-outline btn-sm" onclick="filterTransaksi()">Tampilkan</button>
+          <button class="btn btn-outline btn-sm" onclick="resetFilter()">Semua</button>
+        </div>
+      </div>
+
+      <!-- List Transaksi -->
+      <div class="card">
+        <div class="card-title">📝 Daftar Transaksi</div>
+        <div id="trx-list">
+          <div class="empty-state">
+            <div class="e-icon">📋</div>
+            <p>Belum ada transaksi tercatat.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ringkasan Hari Ini -->
+      <div class="card" id="summary-harian">
+        <div class="card-title">📊 Ringkasan Hari Ini</div>
+        <div class="analysis-grid" id="summary-grid">
+          <div class="analysis-card">
+            <div class="a-label">Omset</div>
+            <div class="a-val text-accent" id="sum-omset">Rp0</div>
+          </div>
+          <div class="analysis-card profit-card">
+            <div class="a-label">Laba Bersih</div>
+            <div class="a-val" id="sum-laba">Rp0</div>
+          </div>
+          <div class="analysis-card loss-card">
+            <div class="a-label">HPP Kumulatif</div>
+            <div class="a-val" id="sum-hpp">Rp0</div>
+          </div>
+          <div class="analysis-card">
+            <div class="a-label">Pengeluaran</div>
+            <div class="a-val text-loss" id="sum-exp">Rp0</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-riwayat -->
+
+  </div><!-- /main -->
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" onclick="switchPage('jual', this)">
+      <span class="nav-icon">💰</span>Jual
+    </button>
+    <button class="nav-btn" onclick="switchPage('hpp', this)">
+      <span class="nav-icon">🧮</span>HPP
+    </button>
+    <button class="nav-btn" onclick="switchPage('closing', this)">
+      <span class="nav-icon">📊</span>Closing
+    </button>
+    <button class="nav-btn" onclick="switchPage('riwayat', this)">
+      <span class="nav-icon">📋</span>Riwayat
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+
+<!-- Modal: Custom Sale -->
+<div class="modal-overlay" id="modal-custom-sale">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>✏️ Catat Penjualan Custom</h3>
+      <button class="modal-close" onclick="closeModal('modal-custom-sale')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Nama / Keterangan</label>
+      <input type="text" id="cs-nama" placeholder="Penjualan khusus…">
+    </div>
+    <div class="form-group">
+      <label>Nominal (Rp)</label>
+      <input type="number" id="cs-nominal" placeholder="0" inputmode="numeric">
+    </div>
+    <button class="btn btn-profit" onclick="customSale()">✅ Catat Penjualan</button>
+  </div>
+</div>
+
+<!-- Modal: Closing Analysis -->
+<div class="modal-overlay" id="modal-closing">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🏠 Analisis Pulang Keliling</h3>
+      <button class="modal-close" onclick="closeModal('modal-closing')">✕</button>
+    </div>
+    <div id="closing-modal-content"></div>
+  </div>
+</div>
+
+<!-- Modal: Ekspor -->
+<div class="modal-overlay" id="modal-export">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>📤 Ekspor Data</h3>
+      <button class="modal-close" onclick="closeModal('modal-export')">✕</button>
+    </div>
+    <p style="color:var(--txt2);font-size:0.85rem;margin-bottom:16px;">Pilih format ekspor data transaksi:</p>
+    <div class="flex-row mb-12">
+      <button class="btn btn-primary" onclick="eksporCSV()">📊 Ekspor CSV (Excel)</button>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="eksporTeks()">📝 Ekspor Teks (Laporan)</button>
+    <div class="divider"></div>
+    <button class="btn btn-loss btn-sm" onclick="confirmReset()">🗑️ Reset Semua Data</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ============================================================
+     JAVASCRIPT — Otak Aplikasi
+     ============================================================ -->
+<script>
+// ================================================================
+// STATE & STORAGE
+// Semua data disimpan di localStorage agar persisten
+// ================================================================
+
+const KEYS = {
+  session:     'umkm_session',
+  bahan:       'umkm_bahan',
+  produk:      'umkm_produk',
+  transaksi:   'umkm_transaksi',
+  pengeluaran: 'umkm_pengeluaran',
+  shifts:      'umkm_shifts',
+  theme:       'umkm_theme',
+};
+
+// Load dari localStorage, atau default kosong
+let session     = load(KEYS.session)     || null;       // Sesi hari ini
+let bahan       = load(KEYS.bahan)       || [];         // Daftar bahan baku
+let produk      = load(KEYS.produk)      || [];         // Daftar produk + HPP
+let transaksi   = load(KEYS.transaksi)   || [];         // Semua transaksi penjualan
+let pengeluaran = load(KEYS.pengeluaran) || [];         // Semua pengeluaran
+let shifts      = load(KEYS.shifts)      || [];         // Riwayat shift harian
+
+let timerInterval = null;  // Interval untuk timer durasi keliling
+
+// ================================================================
+// UTILITY FUNCTIONS
+// ================================================================
+
+/** Simpan data ke localStorage */
+function save(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+/** Ambil data dari localStorage */
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+
+/** Format angka ke Rupiah, misalnya 15000 → "Rp 15.000" */
+function rupiah(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+}
+
+/** Format angka singkat, misalnya 15000 → "15K" */
+function rupiahShort(n) {
+  if (n >= 1000000) return 'Rp' + (n/1000000).toFixed(1) + 'Jt';
+  if (n >= 1000)    return 'Rp' + (n/1000).toFixed(0) + 'K';
+  return 'Rp' + n;
+}
+
+/** Ambil string tanggal hari ini: "2025-06-15" */
+function hariIni() {
+  return new Date().toISOString().split('T')[0];
+}
+
+/** Format datetime objek ke string lokal */
+function fmtDatetime(dt) {
+  return new Date(dt).toLocaleString('id-ID', {
+    day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
+}
+
+/** Format time dari Date object ke HH:MM:SS */
+function fmtTime(dt) {
+  return new Date(dt).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+/** Hitung selisih waktu dalam format "X jam Y menit" */
+function selisihWaktu(start, end) {
+  const ms  = new Date(end) - new Date(start);
+  const jam = Math.floor(ms / 3600000);
+  const min = Math.floor((ms % 3600000) / 60000);
+  const dtk = Math.floor((ms % 60000) / 1000);
+  return `${String(jam).padStart(2,'0')}:${String(min).padStart(2,'0')}:${String(dtk).padStart(2,'0')}`;
+}
+
+/** Tampilkan toast notifikasi */
+function toast(msg, durasi = 2000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), durasi);
+}
+
+/** Buka modal */
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+/** Tutup modal */
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+/** Animasi ripple pada coin button */
+function ripple(btn) {
+  btn.classList.add('rippling');
+  setTimeout(() => btn.classList.remove('rippling'), 400);
+}
+
+// ================================================================
+// TEMA DARK / LIGHT
+// ================================================================
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const newTheme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  html.dataset.theme = newTheme;
+  save(KEYS.theme, newTheme);
+}
+
+// ================================================================
+// INISIALISASI APLIKASI
+// ================================================================
+
+function init() {
+  // Terapkan tema tersimpan
+  const savedTheme = load(KEYS.theme);
+  if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+
+  // Update topbar tanggal
+  const today = new Date();
+  document.getElementById('topbar-date').textContent =
+    today.toLocaleDateString('id-ID', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+
+  // Cek apakah sudah ada sesi aktif hari ini
+  if (!session || session.tanggal !== hariIni()) {
+    // Tampilkan layar mulai sesi
+    showSessionStart();
+  } else {
+    // Sesi sudah ada, langsung tampilkan app
+    renderAll();
+    mulaiTimer();
+  }
+}
+
+/** Tampilkan overlay mulai sesi & jam berjalan */
+function showSessionStart() {
+  const overlay = document.getElementById('session-start');
+  overlay.classList.add('show');
+
+  // Update jam real-time di layar start
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('ss-clock').textContent = now.toLocaleTimeString('id-ID');
+    document.getElementById('ss-date').textContent =
+      now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+/** Pengguna klik "Mulai Keliling" */
+function startSession() {
+  const modalVal = parseFloat(document.getElementById('ss-modal').value) || 0;
+  const now      = new Date();
+
+  // Buat sesi baru untuk hari ini
+  session = {
+    tanggal:    hariIni(),
+    jamMulai:   now.toISOString(),
+    jamPulang:  null,
+    modalAwal:  modalVal,
+    status:     'aktif',  // 'aktif' | 'closed'
+  };
+  save(KEYS.session, session);
+
+  // Tutup overlay
+  document.getElementById('session-start').classList.remove('show');
+
+  renderAll();
+  mulaiTimer();
+  toast('✅ Sesi dimulai! Selamat berjualan!');
+}
+
+// ================================================================
+// TIMER DURASI KELILING
+// ================================================================
+
+function mulaiTimer() {
+  if (!session) return;
+  clearInterval(timerInterval);
+
+  function update() {
+    const now = new Date();
+    const durasi = selisihWaktu(session.jamMulai, now);
+    const el = document.getElementById('timer-display');
+    const chip = document.getElementById('chip-durasi');
+    if (el) el.textContent = durasi;
+    if (chip) chip.textContent = durasi.slice(0, 5); // HH:MM
+  }
+
+  update();
+  timerInterval = setInterval(update, 1000);
+
+  // Update label jam mulai
+  const el = document.getElementById('shift-start-label');
+  if (el) el.textContent = 'Mulai: ' + fmtTime(session.jamMulai);
+}
+
+// ================================================================
+// AKUNTANSI: Hitung Total Hari Ini
+// ================================================================
+
+/**
+ * Hitung semua angka akuntansi untuk sesi hari ini.
+ * Akuntansi dasar:
+ *   Laba Bersih = Total Omset - Total HPP - Total Pengeluaran
+ */
+function hitungHariIni() {
+  const today = hariIni();
+
+  // Transaksi penjualan hari ini
+  const trxHariIni = transaksi.filter(t => t.tanggal === today);
+  const totalOmset = trxHariIni.reduce((s, t) => s + t.nominal, 0);
+  const totalHPP   = trxHariIni.reduce((s, t) => s + (t.hpp || 0), 0);
+  const jmlTrx     = trxHariIni.length;
+
+  // Pengeluaran hari ini
+  const expHariIni  = pengeluaran.filter(e => e.tanggal === today);
+  const totalExp    = expHariIni.reduce((s, e) => s + e.nominal, 0);
+
+  // Laba bersih riil
+  const labaBersih = totalOmset - totalHPP - totalExp;
+
+  return { totalOmset, totalHPP, totalExp, labaBersih, jmlTrx, trxHariIni, expHariIni };
+}
+
+/** Update semua status bar chips */
+function updateStatusBar() {
+  const { totalOmset, totalExp, labaBersih, jmlTrx } = hitungHariIni();
+  document.getElementById('chip-omset').textContent  = rupiahShort(totalOmset);
+  document.getElementById('chip-laba').textContent   = rupiahShort(labaBersih);
+  document.getElementById('chip-keluar').textContent = rupiahShort(totalExp);
+  document.getElementById('chip-trx').textContent    = jmlTrx;
+}
+
+// ================================================================
+// PENJUALAN CEPAT
+// ================================================================
+
+/**
+ * Catat penjualan nominal cepat (uang receh).
+ * Setiap transaksi memiliki timestamp otomatis.
+ */
+function quickSale(nominal) {
+  // Event dari tombol koin: ambil elemen yang diklik untuk ripple
+  const btn = event ? event.currentTarget : null;
+  if (btn) ripple(btn);
+
+  const now = new Date();
+  const trx = {
+    id:       Date.now(),
+    tanggal:  hariIni(),
+    waktu:    now.toISOString(),   // Timestamp lengkap
+    tipe:     'sale',
+    nama:     'Penjualan Rp ' + nominal.toLocaleString('id-ID'),
+    nominal:  nominal,
+    hpp:      0,                   // Penjualan cepat tidak terlacak HPP
+    produkId: null,
+  };
+
+  transaksi.push(trx);
+  save(KEYS.transaksi, transaksi);
+
+  updateStatusBar();
+  renderTrxList(true); // refresh tampilan
+
+  toast(`✅ +${rupiah(nominal)} tercatat!`);
+}
+
+/** Penjualan custom dari modal */
+function customSale() {
+  const nama    = document.getElementById('cs-nama').value.trim() || 'Penjualan Custom';
+  const nominal = parseFloat(document.getElementById('cs-nominal').value) || 0;
+  if (nominal <= 0) { toast('⚠️ Nominal harus > 0!'); return; }
+
+  const now = new Date();
+  transaksi.push({
+    id: Date.now(), tanggal: hariIni(), waktu: now.toISOString(),
+    tipe: 'sale', nama, nominal, hpp: 0, produkId: null,
+  });
+  save(KEYS.transaksi, transaksi);
+
+  closeModal('modal-custom-sale');
+  document.getElementById('cs-nama').value = '';
+  document.getElementById('cs-nominal').value = '';
+
+  updateStatusBar();
+  renderTrxList(true);
+  toast(`✅ +${rupiah(nominal)} "${nama}" tercatat!`);
+}
+
+/**
+ * Jual produk tertentu — HPP otomatis terlacak.
+ * Akuntansi: setiap penjualan produk mengurangi stok bahan baku
+ * proporsional dan mencatat HPP untuk laporan laba rugi.
+ */
+function jualProduk(produkId) {
+  const prod = produk.find(p => p.id === produkId);
+  if (!prod) return;
+
+  const now = new Date();
+  transaksi.push({
+    id:       Date.now(),
+    tanggal:  hariIni(),
+    waktu:    now.toISOString(),
+    tipe:     'sale',
+    nama:     prod.nama,
+    nominal:  prod.hargaJual,
+    hpp:      prod.hpp,           // HPP tercatat untuk perhitungan laba
+    produkId: produkId,
+  });
+  save(KEYS.transaksi, transaksi);
+
+  // Potong stok bahan baku secara proporsional
+  // HPP per produk = total bahan / porsi, jadi setiap penjualan
+  // memotong 1/porsi dari setiap bahan baku
+  const fraksi = prod.porsi > 0 ? (1 / prod.porsi) : 0;
+  if (fraksi > 0) {
+    bahan.forEach(b => {
+      b.stok = Math.max(0, (b.stok || b.jumlah) - (b.jumlah * fraksi));
+    });
+    save(KEYS.bahan, bahan);
+  }
+
+  updateStatusBar();
+  renderTrxList(true);
+  renderBahanList();
+
+  toast(`✅ ${prod.nama} +${rupiah(prod.hargaJual)} | HPP: ${rupiah(prod.hpp)}`);
+}
+
+// ================================================================
+// PENGELUARAN OPERASIONAL
+// ================================================================
+
+function tambahPengeluaran() {
+  const ket     = document.getElementById('exp-ket').value.trim();
+  const nominal = parseFloat(document.getElementById('exp-nominal').value) || 0;
+  if (!ket)       { toast('⚠️ Isi keterangan dulu!'); return; }
+  if (nominal <= 0) { toast('⚠️ Nominal harus > 0!'); return; }
+
+  const now = new Date();
+  pengeluaran.push({
+    id: Date.now(), tanggal: hariIni(), waktu: now.toISOString(),
+    keterangan: ket, nominal,
+  });
+  save(KEYS.pengeluaran, pengeluaran);
+
+  document.getElementById('exp-ket').value = '';
+  document.getElementById('exp-nominal').value = '';
+
+  updateStatusBar();
+  renderTrxList(true);
+  toast(`💸 Pengeluaran "${ket}" -${rupiah(nominal)} tercatat!`);
+}
+
+// ================================================================
+// BAHAN BAKU
+// ================================================================
+
+function tambahBahan() {
+  const nama   = document.getElementById('bb-nama').value.trim();
+  const harga  = parseFloat(document.getElementById('bb-harga').value)   || 0;
+  const jumlah = parseFloat(document.getElementById('bb-jumlah').value)  || 1;
+  const satuan = document.getElementById('bb-satuan').value.trim()        || 'pcs';
+
+  if (!nama)     { toast('⚠️ Nama bahan tidak boleh kosong!'); return; }
+  if (harga <= 0){ toast('⚠️ Harga beli harus > 0!'); return; }
+
+  bahan.push({ id: Date.now(), nama, harga, jumlah, satuan, stok: jumlah });
+  save(KEYS.bahan, bahan);
+
+  // Reset form
+  ['bb-nama','bb-harga','bb-jumlah','bb-satuan'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  renderBahanList();
+  hitungHPP(); // Refresh preview HPP
+  toast(`✅ Bahan "${nama}" ditambahkan!`);
+}
+
+function hapusBahan(id) {
+  bahan = bahan.filter(b => b.id !== id);
+  save(KEYS.bahan, bahan);
+  renderBahanList();
+  hitungHPP();
+  toast('🗑️ Bahan dihapus.');
+}
+
+function renderBahanList() {
+  const list = document.getElementById('bahan-list');
+  const totalEl = document.getElementById('bahan-total');
+  const totalValEl = document.getElementById('total-bahan');
+
+  if (bahan.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="e-icon">🛒</div><p>Belum ada bahan baku.</p></div>`;
+    totalEl.style.display = 'none';
+    return;
+  }
+
+  // Hitung total biaya semua bahan baku
+  const totalBiaya = bahan.reduce((s, b) => s + (b.harga * b.jumlah), 0);
+
+  list.innerHTML = bahan.map(b => {
+    const totalB = b.harga * b.jumlah;
+    const stokPct = b.jumlah > 0 ? ((b.stok || b.jumlah) / b.jumlah * 100) : 100;
+    const stokClass = stokPct < 30 ? 'stok-low' : '';
+    return `
+      <div class="bahan-item">
+        <div class="bahan-info">
+          <div class="b-name">${b.nama}</div>
+          <div class="b-detail">${rupiah(b.harga)} × ${b.jumlah} ${b.satuan} = <strong>${rupiah(totalB)}</strong></div>
+        </div>
+        <div class="bahan-stok">
+          <div class="${stokClass}">${Number(b.stok || b.jumlah).toFixed(2)} ${b.satuan}</div>
+          <div style="font-size:0.65rem;color:var(--txt2);">sisa stok</div>
+        </div>
+        <div class="bahan-actions">
+          <button class="btn-xs btn-outline" onclick="hapusBahan(${b.id})">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  totalValEl.textContent = rupiah(totalBiaya);
+  totalEl.style.display = 'block';
+}
+
+// ================================================================
+// PRODUK & HPP CALCULATOR
+// ================================================================
+
+/**
+ * Hitung HPP per porsi secara real-time.
+ * Formula akuntansi:
+ *   HPP Per Porsi = Total Biaya Semua Bahan Baku / Target Porsi
+ *   Margin        = Harga Jual - HPP Per Porsi
+ *   Margin %      = (Margin / Harga Jual) × 100%
+ */
+function hitungHPP() {
+  const porsi = parseFloat(document.getElementById('prod-porsi').value) || 0;
+  const jual  = parseFloat(document.getElementById('prod-harga-jual').value) || 0;
+  const preview = document.getElementById('hpp-preview');
+
+  if (bahan.length === 0 || porsi === 0) {
+    preview.style.display = 'none';
+    return;
+  }
+
+  const totalBahan = bahan.reduce((s, b) => s + (b.harga * b.jumlah), 0);
+  const hppPerPorsi = totalBahan / porsi;
+  const margin     = jual - hppPerPorsi;
+  const marginPct  = jual > 0 ? (margin / jual * 100).toFixed(1) : 0;
+
+  document.getElementById('prev-total-bahan').textContent = rupiah(totalBahan);
+  document.getElementById('prev-porsi').textContent       = porsi + ' porsi';
+  document.getElementById('prev-hpp').textContent         = rupiah(Math.ceil(hppPerPorsi));
+  document.getElementById('prev-jual').textContent        = rupiah(jual);
+  document.getElementById('prev-margin').textContent      = rupiah(Math.round(margin));
+  document.getElementById('prev-margin-pct').textContent  = marginPct + '%';
+
+  // Warnai margin: hijau = untung, merah = rugi
+  const marginEl = document.getElementById('prev-margin');
+  marginEl.style.color = margin >= 0 ? 'var(--profit)' : 'var(--loss)';
+
+  preview.style.display = 'block';
+}
+
+function tambahProduk() {
+  const nama  = document.getElementById('prod-nama').value.trim();
+  const porsi = parseFloat(document.getElementById('prod-porsi').value) || 0;
+  const jual  = parseFloat(document.getElementById('prod-harga-jual').value) || 0;
+
+  if (!nama)    { toast('⚠️ Nama produk harus diisi!'); return; }
+  if (porsi <= 0){ toast('⚠️ Target porsi harus > 0!'); return; }
+  if (jual <= 0) { toast('⚠️ Harga jual harus > 0!'); return; }
+  if (bahan.length === 0) { toast('⚠️ Tambah bahan baku dulu!'); return; }
+
+  const totalBahan  = bahan.reduce((s, b) => s + (b.harga * b.jumlah), 0);
+  const hpp         = Math.ceil(totalBahan / porsi);
+  const margin      = jual - hpp;
+  const marginPct   = (margin / jual * 100).toFixed(1);
+
+  produk.push({ id: Date.now(), nama, porsi, hargaJual: jual, hpp, margin, marginPct });
+  save(KEYS.produk, produk);
+
+  // Reset form
+  ['prod-nama','prod-porsi','prod-harga-jual'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('hpp-preview').style.display = 'none';
+
+  renderProdukList();
+  renderProductButtons();
+  toast(`✅ Produk "${nama}" disimpan! HPP: ${rupiah(hpp)}`);
+}
+
+function hapusProduk(id) {
+  produk = produk.filter(p => p.id !== id);
+  save(KEYS.produk, produk);
+  renderProdukList();
+  renderProductButtons();
+  toast('🗑️ Produk dihapus.');
+}
+
+function renderProdukList() {
+  const el = document.getElementById('produk-list');
+  if (produk.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="e-icon">🏷️</div><p>Belum ada produk.</p></div>`;
+    return;
+  }
+  el.innerHTML = produk.map(p => `
+    <div class="bahan-item">
+      <div class="bahan-info">
+        <div class="b-name">${p.nama}</div>
+        <div class="b-detail">
+          HPP: <strong>${rupiah(p.hpp)}</strong> | Jual: <strong>${rupiah(p.hargaJual)}</strong>
+          | Margin: <span style="color:${p.margin >= 0 ? 'var(--profit)' : 'var(--loss)'}">${rupiah(p.margin)} (${p.marginPct}%)</span>
+        </div>
+      </div>
+      <div class="bahan-actions">
+        <button class="btn-xs btn-outline" onclick="hapusProduk(${p.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/** Render tombol produk di halaman Jual */
+function renderProductButtons() {
+  const el = document.getElementById('product-buttons');
+  if (produk.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:16px;">
+      <div class="e-icon">🏷️</div><p>Tambah produk di tab <strong>HPP</strong> dulu ya!</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = produk.map(p => `
+    <button class="product-btn" onclick="jualProduk(${p.id})">
+      <span>${p.nama}</span>
+      <span class="p-price">${rupiah(p.hargaJual)}</span>
+      <span class="p-hpp">HPP: ${rupiah(p.hpp)}</span>
+      <span class="p-margin">Margin: ${rupiah(p.margin)}</span>
+    </button>
+  `).join('');
+}
+
+// ================================================================
+// CLOSING — ANALISIS PULANG KELILING
+// ================================================================
+
+/**
+ * Proses closing shift:
+ * 1. Catat jam pulang
+ * 2. Hitung semua angka akuntansi
+ * 3. Tampilkan form rekonsiliasi kas
+ */
+function openClosing() {
+  if (!session) { toast('⚠️ Mulai sesi dulu!'); return; }
+  if (session.status === 'closed') {
+    toast('ℹ️ Sesi hari ini sudah ditutup.');
+    renderClosingPage();
+    switchPage('closing', document.querySelectorAll('.nav-btn')[2]);
+    return;
+  }
+
+  const { totalOmset, totalHPP, totalExp, labaBersih, jmlTrx } = hitungHariIni();
+  const jamPulang = new Date();
+  const durasi    = selisihWaktu(session.jamMulai, jamPulang);
+
+  // Rekonsiliasi kas yang diharapkan:
+  // Kas Akhir Teori = Modal Awal + Omset - Pengeluaran
+  const kasTeori = session.modalAwal + totalOmset - totalExp;
+
+  const html = `
+    <div class="analysis-grid">
+      <div class="analysis-card accent-card">
+        <div class="a-label">⏱️ Durasi Keliling</div>
+        <div class="a-val">${durasi}</div>
+      </div>
+      <div class="analysis-card">
+        <div class="a-label">📦 Total Transaksi</div>
+        <div class="a-val">${jmlTrx}</div>
+      </div>
+    </div>
+
+    <div class="hpp-summary" style="margin-bottom:14px;">
+      <div class="hpp-row">
+        <span class="hpp-label">🕐 Jam Mulai</span>
+        <span class="hpp-val">${fmtTime(session.jamMulai)}</span>
+      </div>
+      <div class="hpp-row">
+        <span class="hpp-label">🏠 Jam Pulang</span>
+        <span class="hpp-val">${fmtTime(jamPulang)}</span>
+      </div>
+      <div class="divider"></div>
+      <div class="hpp-row highlight">
+        <span class="hpp-label">💰 Total Omset (Pendapatan Kotor)</span>
+        <span class="hpp-val">${rupiah(totalOmset)}</span>
+      </div>
+      <div class="hpp-row">
+        <span class="hpp-label">🏭 Total HPP Kumulatif</span>
+        <span class="hpp-val text-loss">- ${rupiah(totalHPP)}</span>
+      </div>
+      <div class="hpp-row">
+        <span class="hpp-label">💸 Total Pengeluaran Operasional</span>
+        <span class="hpp-val text-loss">- ${rupiah(totalExp)}</span>
+      </div>
+      <div class="hpp-row profit-row">
+        <span class="hpp-label">✨ Laba Bersih Riil</span>
+        <span class="hpp-val" style="color:${labaBersih >= 0 ? 'var(--profit)' : 'var(--loss)'};">${rupiah(labaBersih)}</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-title">💵 Rekonsiliasi Kas</div>
+      <div class="hpp-row">
+        <span class="hpp-label">Modal Awal</span>
+        <span class="hpp-val">${rupiah(session.modalAwal)}</span>
+      </div>
+      <div class="hpp-row">
+        <span class="hpp-label">+ Omset</span>
+        <span class="hpp-val text-profit">+${rupiah(totalOmset)}</span>
+      </div>
+      <div class="hpp-row">
+        <span class="hpp-label">- Pengeluaran</span>
+        <span class="hpp-val text-loss">-${rupiah(totalExp)}</span>
+      </div>
+      <div class="hpp-row highlight">
+        <span class="hpp-label">= Kas Seharusnya</span>
+        <span class="hpp-val">${rupiah(kasTeori)}</span>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>💰 Hitung Uang Fisik di Kantong Sekarang (Rp)</label>
+        <input type="number" id="kas-fisik" placeholder="${kasTeori}" inputmode="numeric" oninput="hitungRekon(${kasTeori})">
+      </div>
+      <div id="rekon-result" class="rekonsiliasi-box" style="display:none;"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="tutupShift(${jamPulang.getTime()}, ${totalOmset}, ${totalHPP}, ${totalExp}, ${labaBersih}, ${kasTeori})">
+      ✅ Tutup Shift & Simpan Laporan
+    </button>
+  `;
+
+  document.getElementById('closing-modal-content').innerHTML = html;
+  openModal('modal-closing');
+}
+
+/** Hitung rekonsiliasi kas real-time saat pengguna input */
+function hitungRekon(kasTeori) {
+  const kasFisik = parseFloat(document.getElementById('kas-fisik').value) || 0;
+  const selisih  = kasFisik - kasTeori;
+  const resultEl = document.getElementById('rekon-result');
+
+  let html, cls;
+  if (Math.abs(selisih) < 1) {
+    html = `✅ KAS MATCH! Pembukuan seimbang.`;
+    cls  = 'rekon-match';
+  } else if (selisih > 0) {
+    html = `⬆️ LEBIH ${rupiah(selisih)}<br><small style="color:var(--txt2);">Ada kelebihan kas — periksa catatan</small>`;
+    cls  = 'rekon-plus';
+  } else {
+    html = `⬇️ KURANG ${rupiah(Math.abs(selisih))}<br><small style="color:var(--txt2);">Ada kekurangan kas — periksa catatan</small>`;
+    cls  = 'rekon-minus';
+  }
+
+  resultEl.innerHTML = `<div class="rekon-result ${cls}">${html}</div>`;
+  resultEl.style.display = 'block';
+}
+
+/** Simpan closing shift secara permanen */
+function tutupShift(jamPulangMs, omset, hpp, exp, laba, kasTeori) {
+  const kasFisik = parseFloat(document.getElementById('kas-fisik').value) || 0;
+  const selisih  = kasFisik - kasTeori;
+
+  // Update session
+  session.jamPulang  = new Date(jamPulangMs).toISOString();
+  session.status     = 'closed';
+  session.omset      = omset;
+  session.hpp        = hpp;
+  session.exp        = exp;
+  session.laba       = laba;
+  session.kasTeori   = kasTeori;
+  session.kasFisik   = kasFisik;
+  session.selisihKas = selisih;
+  save(KEYS.session, session);
+
+  // Simpan ke riwayat shifts
+  shifts.push({ ...session });
+  save(KEYS.shifts, shifts);
+
+  clearInterval(timerInterval);
+  closeModal('modal-closing');
+
+  renderClosingPage();
+  switchPage('closing', document.querySelectorAll('.nav-btn')[2]);
+  toast('🎉 Shift ditutup! Laporan tersimpan.');
+}
+
+/** Render halaman closing dengan data tersimpan */
+function renderClosingPage() {
+  const el = document.getElementById('closing-content');
+  if (!session || session.status !== 'closed') {
+    el.innerHTML = `<div class="empty-state" style="padding:60px 16px;">
+      <div class="e-icon">📊</div>
+      <p>Tutup shift dari tab <strong>Jual</strong> untuk melihat analisis.</p>
+    </div>`;
+    return;
+  }
+
+  const durasi  = selisihWaktu(session.jamMulai, session.jamPulang);
+  const selisih = session.selisihKas || 0;
+  let rekonClass = 'rekon-match', rekonTeks = '✅ KAS MATCH!';
+  if (selisih > 1)       { rekonClass = 'rekon-plus';  rekonTeks = `⬆️ LEBIH ${rupiah(selisih)}`; }
+  else if (selisih < -1) { rekonClass = 'rekon-minus'; rekonTeks = `⬇️ KURANG ${rupiah(Math.abs(selisih))}`; }
+
+  el.innerHTML = `
+    <div class="card" style="background:linear-gradient(135deg,var(--surface),var(--surface2));border-color:var(--accent);">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:2rem;">📊</div>
+        <h3 style="font-size:1rem;font-weight:800;color:var(--accent);">LAPORAN CLOSING</h3>
+        <p style="font-size:0.78rem;color:var(--txt2);">${new Date(session.jamPulang).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
+      </div>
+      <div class="analysis-grid">
+        <div class="analysis-card accent-card">
+          <div class="a-label">Durasi Keliling</div>
+          <div class="a-val" style="font-size:0.9rem;">${durasi}</div>
+        </div>
+        <div class="analysis-card">
+          <div class="a-label">Jam Berangkat</div>
+          <div class="a-val" style="font-size:0.9rem;">${fmtTime(session.jamMulai)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 Laporan Laba Rugi</div>
+      <div class="hpp-summary">
+        <div class="hpp-row highlight">
+          <span class="hpp-label">Total Omset</span>
+          <span class="hpp-val">${rupiah(session.omset)}</span>
+        </div>
+        <div class="hpp-row">
+          <span class="hpp-label">HPP Kumulatif</span>
+          <span class="hpp-val text-loss">- ${rupiah(session.hpp)}</span>
+        </div>
+        <div class="hpp-row">
+          <span class="hpp-label">Pengeluaran Operasional</span>
+          <span class="hpp-val text-loss">- ${rupiah(session.exp)}</span>
+        </div>
+        <div class="hpp-row profit-row" style="background:rgba(76,175,130,0.1);border-radius:8px;padding:8px;">
+          <span class="hpp-label fw-bold">✨ LABA BERSIH RIIL</span>
+          <span class="hpp-val" style="font-size:1.2rem;color:${session.laba >= 0 ? 'var(--profit)' : 'var(--loss)'};">${rupiah(session.laba)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💵 Rekonsiliasi Kas</div>
+      <div class="hpp-summary">
+        <div class="hpp-row"><span class="hpp-label">Modal Awal</span><span class="hpp-val">${rupiah(session.modalAwal)}</span></div>
+        <div class="hpp-row"><span class="hpp-label">+ Omset</span><span class="hpp-val text-profit">+${rupiah(session.omset)}</span></div>
+        <div class="hpp-row"><span class="hpp-label">- Pengeluaran</span><span class="hpp-val text-loss">-${rupiah(session.exp)}</span></div>
+        <div class="hpp-row highlight"><span class="hpp-label">= Kas Seharusnya</span><span class="hpp-val">${rupiah(session.kasTeori)}</span></div>
+        <div class="hpp-row"><span class="hpp-label">Uang Fisik Dihitung</span><span class="hpp-val">${rupiah(session.kasFisik)}</span></div>
+      </div>
+      <div class="rekonsiliasi-box">
+        <div style="font-size:0.8rem;color:var(--txt2);">Status Rekonsiliasi</div>
+        <div class="rekon-result ${rekonClass}">${rekonTeks}</div>
+      </div>
+    </div>
+
+    <div class="flex-row">
+      <button class="btn btn-outline btn-sm" onclick="buktiShiftBaru()">🆕 Mulai Hari Baru</button>
+      <button class="btn btn-info btn-sm" onclick="switchPage('riwayat', document.querySelectorAll('.nav-btn')[3])">📋 Lihat Riwayat</button>
+    </div>
+  `;
+}
+
+/** Reset untuk memulai hari baru */
+function buktiShiftBaru() {
+  session = null;
+  save(KEYS.session, null);
+  // Reset stok bahan ke jumlah awal
+  bahan.forEach(b => { b.stok = b.jumlah; });
+  save(KEYS.bahan, bahan);
+  showSessionStart();
+  toast('🆕 Siap untuk hari baru!');
+}
+
+// ================================================================
+// RIWAYAT TRANSAKSI
+// ================================================================
+
+function renderTrxList(hariIniOnly = false) {
+  const el = document.getElementById('trx-list');
+  const dari    = document.getElementById('filter-dari')?.value;
+  const sampai  = document.getElementById('filter-sampai')?.value;
+
+  // Gabungkan penjualan dan pengeluaran
+  let allTrx = [
+    ...transaksi.map(t => ({ ...t, _type: 'sale' })),
+    ...pengeluaran.map(e => ({ ...e, _type: 'expense', nominal: -e.nominal, nama: e.keterangan })),
+  ];
+
+  // Filter berdasarkan tanggal jika ada
+  if (hariIniOnly) {
+    allTrx = allTrx.filter(t => t.tanggal === hariIni());
+  } else if (dari || sampai) {
+    allTrx = allTrx.filter(t => {
+      if (dari && t.tanggal < dari) return false;
+      if (sampai && t.tanggal > sampai) return false;
+      return true;
+    });
+  }
+
+  // Urutkan terbaru di atas
+  allTrx.sort((a, b) => new Date(b.waktu) - new Date(a.waktu));
+
+  if (allTrx.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="e-icon">📋</div><p>Tidak ada transaksi ditemukan.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = allTrx.slice(0, 100).map(t => {
+    const isSale = t._type === 'sale';
+    return `
+      <div class="trx-item ${isSale ? 'sale' : 'expense'}">
+        <div class="trx-info">
+          <div class="trx-name">${isSale ? '💰' : '💸'} ${t.nama}</div>
+          <div class="trx-time">${fmtDatetime(t.waktu)}${t.hpp ? ` · HPP: ${rupiah(t.hpp)}` : ''}</div>
+        </div>
+        <div class="trx-amount ${isSale ? 'sale-amt' : 'exp-amt'}">
+          ${isSale ? '+' : ''}${rupiah(Math.abs(t.nominal))}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterTransaksi() {
+  renderTrxList(false);
+}
+
+function resetFilter() {
+  document.getElementById('filter-dari').value = '';
+  document.getElementById('filter-sampai').value = '';
+  renderTrxList(false);
+}
+
+/** Update ringkasan harian di tab Riwayat */
+function updateSummaryHarian() {
+  const { totalOmset, totalHPP, totalExp, labaBersih } = hitungHariIni();
+  document.getElementById('sum-omset').textContent = rupiah(totalOmset);
+  document.getElementById('sum-laba').textContent  = rupiah(labaBersih);
+  document.getElementById('sum-hpp').textContent   = rupiah(totalHPP);
+  document.getElementById('sum-exp').textContent   = rupiah(totalExp);
+}
+
+// ================================================================
+// GRAFIK BATANG 7 HARI
+// ================================================================
+
+function renderBarChart() {
+  const el = document.getElementById('bar-chart');
+  if (!el) return;
+
+  // Ambil data 7 hari terakhir
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    const dayTrx = transaksi.filter(t => t.tanggal === key);
+    const omset  = dayTrx.reduce((s, t) => s + t.nominal, 0);
+    days.push({
+      label: d.toLocaleDateString('id-ID', { weekday: 'short' }),
+      omset,
+    });
+  }
+
+  const maxOmset = Math.max(...days.map(d => d.omset), 1);
+
+  el.innerHTML = days.map(d => {
+    const pct = (d.omset / maxOmset * 100).toFixed(1);
+    return `
+      <div class="bar-wrap">
+        <div class="bar-col" style="height:${pct}%;background:${d.omset > 0 ? 'var(--accent)' : 'var(--border)'};"></div>
+        <div class="bar-label">${d.label}<br><small>${d.omset > 0 ? rupiahShort(d.omset) : ''}</small></div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ================================================================
+// NAVIGASI TAB
+// ================================================================
+
+function switchPage(page, btn) {
+  // Sembunyikan semua halaman
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  // Tampilkan halaman yang dipilih
+  document.getElementById('page-' + page).classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  // Refresh konten sesuai halaman
+  if (page === 'riwayat') {
+    renderTrxList(false);
+    updateSummaryHarian();
+    renderBarChart();
+  }
+  if (page === 'closing') {
+    renderClosingPage();
+  }
+  if (page === 'hpp') {
+    renderBahanList();
+    renderProdukList();
+  }
+}
+
+// ================================================================
+// EKSPOR DATA
+// ================================================================
+
+/** Ekspor semua transaksi ke CSV yang bisa dibuka Excel */
+function eksporCSV() {
+  const header = ['Tanggal','Waktu','Tipe','Nama/Keterangan','Nominal','HPP','Catatan'];
+  const rows   = [header.join(',')];
+
+  // Transaksi penjualan
+  transaksi.forEach(t => {
+    const waktu = new Date(t.waktu);
+    rows.push([
+      t.tanggal,
+      waktu.toLocaleTimeString('id-ID'),
+      'Penjualan',
+      `"${t.nama}"`,
+      t.nominal,
+      t.hpp || 0,
+      t.produkId ? 'Produk Terdaftar' : 'Quick Sale',
+    ].join(','));
+  });
+
+  // Pengeluaran
+  pengeluaran.forEach(e => {
+    const waktu = new Date(e.waktu);
+    rows.push([
+      e.tanggal,
+      waktu.toLocaleTimeString('id-ID'),
+      'Pengeluaran',
+      `"${e.keterangan}"`,
+      -e.nominal,
+      0,
+      'Operasional',
+    ].join(','));
+  });
+
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `UMKM_Data_${hariIni()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  closeModal('modal-export');
+  toast('📊 CSV berhasil diunduh!');
+}
+
+/** Ekspor laporan teks (bisa di-WhatsApp) */
+function eksporTeks() {
+  const { totalOmset, totalHPP, totalExp, labaBersih, jmlTrx } = hitungHariIni();
+  const tgl = new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const teks = `
+━━━━━━━━━━━━━━━━━━━━━━━━
+📊 LAPORAN HARIAN UMKM KELILING
+${tgl}
+━━━━━━━━━━━━━━━━━━━━━━━━
+Modal Awal    : ${rupiah(session?.modalAwal || 0)}
+Jam Mulai     : ${session ? fmtTime(session.jamMulai) : '-'}
+Jam Pulang    : ${session?.jamPulang ? fmtTime(session.jamPulang) : 'Masih berjalan'}
+
+📈 PENDAPATAN
+Total Transaksi : ${jmlTrx}x
+Total Omset     : ${rupiah(totalOmset)}
+
+📉 BIAYA & PENGELUARAN
+Total HPP       : ${rupiah(totalHPP)}
+Total Ops       : ${rupiah(totalExp)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+✨ LABA BERSIH RIIL
+${rupiah(labaBersih)}
+━━━━━━━━━━━━━━━━━━━━━━━━
+Dibuat otomatis oleh Kalkulator HPP UMKM Keliling
+`.trim();
+
+  if (navigator.share) {
+    navigator.share({ title: 'Laporan UMKM', text: teks });
+  } else {
+    navigator.clipboard.writeText(teks).then(() => {
+      toast('📋 Laporan disalin ke clipboard!');
+    });
+  }
+  closeModal('modal-export');
+}
+
+function confirmReset() {
+  if (confirm('⚠️ Yakin mau HAPUS SEMUA DATA?\nTindakan ini tidak bisa dibatalkan!')) {
+    Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+}
+
+// ================================================================
+// RENDER ALL — Panggil semua render fungsi
+// ================================================================
+
+function renderAll() {
+  renderBahanList();
+  renderProdukList();
+  renderProductButtons();
+  renderTrxList(true);
+  updateStatusBar();
+  updateSummaryHarian();
+  renderClosingPage();
+
+  // Update shift banner
+  const banner = document.getElementById('shift-banner');
+  if (session && session.status === 'closed') {
+    banner.classList.add('closed');
+    banner.querySelector('h3').textContent = '🔴 Shift Ditutup';
+  }
+}
+
+// ================================================================
+// BOOT
+// ================================================================
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
